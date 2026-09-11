@@ -803,6 +803,7 @@ let talentView = {scale:1, ox:0, oy:0};
 let talentDrag = null;
 
 const WORLD_W = 120, WORLD_H = 80, TILE = 16;
+const INV_CAP = 40;
 const view = $('view');
 const ctx = view.getContext('2d');
 ctx.imageSmoothingEnabled = false;
@@ -1166,7 +1167,7 @@ function renderInventory() {
 
   const ig = $('inv-grid');
   html = '';
-  for (let i=0; i<20; i++) {
+  for (let i=0; i<INV_CAP; i++) {
     const it = inventory[i];
     if (it) {
       html += `<div class="inv-cell rarity-${it.rarity}" data-idx="${i}" data-kind="inv">
@@ -1244,7 +1245,7 @@ function unequip(slot) {
   const it = equipment[slot];
   if (!it) return;
   equipment[slot] = null;
-  if (inventory.length >= 20) {
+  if (inventory.length >= INV_CAP) {
     groundItems.push({item:it, x:player.x+irnd(-8,8), y:player.y+irnd(-8,8), t:0});
   } else {
     inventory.push(it);
@@ -1318,7 +1319,7 @@ function renderShop() {
 function buyShopItem(idx) {
   const it = shopStock[idx];
   if (!it) return;
-  if (inventory.length >= 20) {
+  if (inventory.length >= INV_CAP) {
     addFloatText(player.x, player.y - 18, '背包已满', '#d0574f');
     beep(160, 0.06, 0.1);
     return;
@@ -2153,7 +2154,7 @@ function update(dt) {
   for (let i=groundItems.length-1;i>=0;i--) {
     const g = groundItems[i];
     if (dist(player.x,player.y,g.x,g.y) < 24) {
-      if (inventory.length < 20) {
+      if (inventory.length < INV_CAP) {
         inventory.push(g.item);
         addFloatText(player.x, player.y-14, g.item.name, RARITY_COLORS[g.item.rarity]);
         logLoot(g.item);
