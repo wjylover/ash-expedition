@@ -318,6 +318,7 @@
   #tooltip .tt-affix.prefix { color: #9fc7ff; }
   #tooltip .tt-affix.suffix { color: #9fe0b5; }
   #tooltip .tt-affix.implicit { color: #cbb7ff; }
+  #tooltip .tt-affix.legendary { color: #ffb35c; }
   #tooltip .tt-note { color: var(--dim); margin-top: 6px; }
 
   #lootlog {
@@ -656,15 +657,43 @@ const UNIQUES = [
   {name:'灰烬之刃', base:'长剑', slot:'weapon', ilvl:12,
     affixes:[{stat:'damage', value:1.2, name:'+120% 物理伤害', prefix:true},
              {stat:'life', value:30, name:'+30 生命'},
-             {stat:'atkSpeed', value:0.18, name:'+18% 攻击速度'}]},
+             {stat:'atkSpeed', value:0.18, name:'+18% 攻击速度'}],
+    effects:[
+      {id:'cleave_fan', text:'裂地斩改为三段扇形斩击'},
+      {id:'cleave_explosion', text:'裂地斩击杀时释放小型爆炸'}
+    ]},
   {name:'风暴之心', base:'法杖', slot:'weapon', ilvl:16,
     affixes:[{stat:'spell', value:0.8, name:'+80% 法术伤害'},
              {stat:'mana', value:50, name:'+50 法力'},
-             {stat:'light', value:0.30, name:'+30% 闪电抗性'}]},
+             {stat:'light', value:0.30, name:'+30% 闪电抗性'}],
+    effects:[
+      {id:'fireball_lightning', text:'火球术转化为闪电弹，并附加 1 次连锁'},
+      {id:'chain_storm_legend', text:'连锁闪电额外跳跃 2 次'}
+    ]},
   {name:'流浪者披风', base:'布甲', slot:'body', ilvl:10,
     affixes:[{stat:'life', value:60, name:'+60 生命'},
              {stat:'moveSpeed', value:0.25, name:'+25% 移动速度'},
-             {stat:'armor', value:40, name:'+40 护甲'}]},
+             {stat:'armor', value:40, name:'+40 护甲'}],
+    effects:[
+      {id:'ranger_split', text:'分裂箭额外发射 2 支箭'},
+      {id:'crit_heal', text:'暴击时回复 5% 最大生命'}
+    ]},
+  {name:'猎鹰之眼', base:'猎弓', slot:'weapon', ilvl:14,
+    affixes:[{stat:'damage', value:0.9, name:'+90% 物理伤害', prefix:true},
+             {stat:'crit', value:0.15, name:'+15% 暴击率', prefix:true},
+             {stat:'atkSpeed', value:0.14, name:'+14% 攻击速度'}],
+    effects:[
+      {id:'arrow_pierce', text:'箭矢有 35% 概率穿透并继续飞行'},
+      {id:'barrage_split', text:'疾风连射额外发射 2 支箭'}
+    ]},
+  {name:'血月护符', base:'项链', slot:'amulet', ilvl:18,
+    affixes:[{stat:'life', value:45, name:'+45 生命'},
+             {stat:'leech', value:0.08, name:'+8% 生命偷取'},
+             {stat:'mana', value:30, name:'+30 法力'}],
+    effects:[
+      {id:'mana_on_kill', text:'击杀敌人时回复 8% 最大法力'},
+      {id:'all_leech', text:'所有伤害额外吸取 5% 生命'}
+    ]},
 ];
 
 const RARITY_COLORS = {normal:'#b9c0c9', magic:'#4aa3ff', rare:'#ffd23f', unique:'#e08a3c'};
@@ -706,6 +735,42 @@ const TREE_BRANCHES = [
   ]},
 ];
 
+const CORE_TALENTS = {
+  warrior: [
+    {id:'w_blood_explosion', name:'血爆', color:'#ff6b4a', connect:'phys_3', r:545, angle:-45,
+      fx:{life:45}, effect:'warrior_blood_explosion',
+      desc:'近战击杀时引爆敌人，对周围目标造成 70% 武器伤害'},
+    {id:'w_aftershock', name:'余震', color:'#e08a3c', connect:'life_3', r:560, angle:0,
+      fx:{damage:0.15}, effect:'warrior_aftershock',
+      desc:'震地猛击会额外释放一道较小冲击波'},
+    {id:'w_fury', name:'狂怒', color:'#d0574f', connect:'def_2', r:545, angle:45,
+      fx:{atkSpeed:0.10}, effect:'warrior_fury',
+      desc:'近战技能命中时有 18% 概率造成双倍伤害'}
+  ],
+  ranger: [
+    {id:'r_pierce', name:'贯穿', color:'#59b6a3', connect:'speed_2', r:545, angle:-45,
+      fx:{crit:0.10}, effect:'arrow_pierce',
+      desc:'箭矢有 35% 概率穿透并继续飞行'},
+    {id:'r_crit_heal', name:'猎杀本能', color:'#4f9d62', connect:'phys_3', r:560, angle:0,
+      fx:{damage:0.15}, effect:'crit_heal',
+      desc:'暴击时回复 5% 最大生命'},
+    {id:'r_split', name:'箭雨', color:'#d8a33a', connect:'mana_2', r:545, angle:45,
+      fx:{atkSpeed:0.08}, effect:'ranger_split',
+      desc:'分裂箭额外发射 2 支箭'}
+  ],
+  mage: [
+    {id:'m_ember_split', name:'焚身', color:'#ff8a4a', connect:'elem_2', r:545, angle:-45,
+      fx:{spell:0.18}, effect:'fire_split',
+      desc:'火球术分裂为 3 颗火球，单颗伤害降低'},
+    {id:'m_chain_storm', name:'风暴过载', color:'#6cc7ff', connect:'mana_2', r:560, angle:0,
+      fx:{light:0.12}, effect:'chain_storm',
+      desc:'连锁闪电额外跳跃 2 次'},
+    {id:'m_mana_on_kill', name:'灵魂收割', color:'#8f7fd8', connect:'phys_3', r:545, angle:45,
+      fx:{mana:40}, effect:'mana_on_kill',
+      desc:'击杀敌人时回复 8% 最大法力'}
+  ]
+};
+
 /* ============================ 状态 ============================ */
 let player = null;
 let talents = null;
@@ -718,6 +783,7 @@ let projectiles = [];
 let groundItems = [];
 let particles = [];
 let floatTexts = [];
+let delayedEffects = [];
 let skills = [];
 let cooldowns = {};
 let basicCd = 0;
@@ -823,6 +889,7 @@ function enterMap(id, silent) {
   groundItems = [];
   particles = [];
   floatTexts = [];
+  delayedEffects = [];
   targetPoint = null;
   moving = false;
   if (player) {
@@ -883,6 +950,31 @@ function recalcStats() {
   player.stats = s;
 }
 
+function activeCoreEffects() {
+  const out = new Set();
+  if (!talents || !talents.nodes) return out;
+  for (const id of talents.allocated) {
+    const nd = talents.nodes[id];
+    if (nd && nd.effect) out.add(nd.effect);
+  }
+  return out;
+}
+
+function equippedUniqueEffects() {
+  const out = [];
+  for (const slot in equipment) {
+    const it = equipment[slot];
+    if (!it || !Array.isArray(it.effects)) continue;
+    out.push(...it.effects);
+  }
+  return out;
+}
+
+function hasEffect(id) {
+  if (activeCoreEffects().has(id)) return true;
+  return equippedUniqueEffects().some(e => e.id === id);
+}
+
 function attackDamage(weaponMult) {
   const w = player.weapon;
   const avg = (w.dmg[0]+w.dmg[1])/2;
@@ -929,11 +1021,13 @@ function makeItem(ilvl, forcedRarity) {
   }
 
   if (rarity === 'unique') {
-    const u = UNIQUES.find(u => u.ilvl <= ilvl) || UNIQUES[0];
+    const avail = UNIQUES.filter(u => u.ilvl <= ilvl);
+    const u = avail.length ? pick(avail) : UNIQUES[0];
     const ub = baseForName(u.slot, u.base);
     return {uid, name:u.name, slot:u.slot, rarity:'unique', ilvl:u.ilvl,
       baseFx: baseFxFromBase(ub),
-      baseName:u.base, affixes:u.affixes.map(a=>({...a})), unique:true};
+      baseName:u.base, affixes:u.affixes.map(a=>({...a})),
+      effects: (u.effects || []).map(e=>({...e})), unique:true};
   }
 
   // 选择底材
@@ -1022,6 +1116,12 @@ function itemTooltipHTML(it) {
   if (w && w.atkSpeed) html += `<div class="tt-affix implicit">+${Math.round(w.atkSpeed*100)}% 攻击速度（底材）</div>`;
   for (const a of it.affixes) {
     html += `<div class="tt-affix ${a.prefix?'prefix':'suffix'}">${a.name}</div>`;
+  }
+  if (it.unique && Array.isArray(it.effects) && it.effects.length) {
+    html += `<div class="tt-sep"></div>`;
+    for (const ef of it.effects) {
+      html += `<div class="tt-affix legendary">${ef.text}</div>`;
+    }
   }
   html += `<div class="tt-sep"></div>`;
   html += `<div class="tt-affix suffix">售价 ${itemSellPrice(it)} 金币</div>`;
@@ -1265,6 +1365,24 @@ function renderCharacter() {
   let html = '<table class="stat-table">';
   for (const [k,v] of rows) html += `<tr><td>${k}</td><td>${v}</td></tr>`;
   html += '</table>';
+  const effects = [];
+  for (const id of talents.allocated) {
+    const nd = talents.nodes[id];
+    if (nd && nd.effect) effects.push({name:nd.name + ' · 核心', text:nd.desc, color:nd.color});
+  }
+  for (const slot in equipment) {
+    const it = equipment[slot];
+    if (!it || !Array.isArray(it.effects)) continue;
+    for (const ef of it.effects) effects.push({name:it.name, text:ef.text, color:'#e08a3c'});
+  }
+  if (effects.length) {
+    html += '<div class="stat-sec">构建效果</div>';
+    html += '<table class="stat-table">';
+    for (const ef of effects) {
+      html += `<tr><td style="color:${ef.color}">${ef.name}</td><td style="color:var(--text); text-align:left;">${ef.text}</td></tr>`;
+    }
+    html += '</table>';
+  }
   $('char-body').innerHTML = html;
 }
 
@@ -1343,6 +1461,14 @@ function buildTalents(classId) {
       prev = id;
     });
   });
+  // 核心天赋：每个职业在分支末端延伸出三个改变机制的节点
+  (CORE_TALENTS[classId] || []).forEach((cd) => {
+    const rad = (cd.angle || 0) * Math.PI / 180;
+    const id = 'core_' + cd.id;
+    nodes[id] = {id, x:110 + Math.cos(rad)*(cd.r || 560), y:310 + Math.sin(rad)*(cd.r || 560),
+      name:cd.name, fx:cd.fx || {}, color:cd.color, effect:cd.effect, core:true, desc:cd.desc};
+    edges.push([cd.connect, id]);
+  });
   // 跨分支连接
   edges.push(['life_1','def_1']);
   edges.push(['phys_1','elem_1']);
@@ -1399,6 +1525,14 @@ function fitTalentView() {
   talentView.oy = (c.height - h*talentView.scale)/2 - minY*talentView.scale;
 }
 
+function talentTooltipHTML(nd) {
+  const allocated = talents.allocated.includes(nd.id);
+  const color = nd.color || '#d8a33a';
+  return `<div class="tt-name" style="color:${color}">${nd.name}${nd.core ? ' <span style="color:#e08a3c">核心</span>' : ''}</div>
+    <div style="color:var(--dim)">${allocated ? '已分配' : '未分配'}${nd.core ? ' · 改变机制' : ''}</div>
+    ${nd.desc ? `<div class="tt-sep"></div><div class="tt-affix" style="color:${color}">${nd.desc}</div>` : ''}`;
+}
+
 function drawTalents() {
   const c = $('talent-canvas');
   const cx = c.getContext('2d');
@@ -1425,22 +1559,34 @@ function drawTalents() {
     const nd = talents.nodes[id];
     const allocated = talents.allocated.includes(id);
     const allocable = canAllocate(id);
+    const r = nd.core ? 24 : (allocated ? 20 : 14);
     cx.beginPath();
-    cx.arc(nd.x, nd.y, allocated?20:14, 0, Math.PI*2);
+    cx.arc(nd.x, nd.y, r, 0, Math.PI*2);
     cx.fillStyle = allocated ? (nd.color||'#d8a33a') : '#1e242d';
     cx.fill();
-    cx.lineWidth = allocable ? 3 : 2;
-    cx.strokeStyle = allocable ? '#ffd23f' : (allocated ? nd.color : '#3a4552');
+    cx.lineWidth = nd.core ? 4 : (allocable ? 3 : 2);
+    cx.strokeStyle = allocable ? '#ffd23f' : (allocated ? nd.color : (nd.core ? '#8a6b3f' : '#3a4552'));
     cx.stroke();
     if (nd.entry) {
       cx.beginPath(); cx.arc(nd.x, nd.y, 5, 0, Math.PI*2);
       cx.fillStyle = '#fff'; cx.fill();
     }
+    if (nd.core) {
+      cx.beginPath(); cx.arc(nd.x, nd.y, r+4, 0, Math.PI*2);
+      cx.lineWidth = 1;
+      cx.strokeStyle = allocable ? '#ffd23f' : 'rgba(255,255,255,0.18)';
+      cx.stroke();
+    }
     // 名称
     cx.fillStyle = allocated ? '#101318' : (allocable ? '#ffd23f' : '#7f8996');
-    cx.font = 'bold 11px monospace';
+    cx.font = nd.core ? 'bold 12px monospace' : 'bold 11px monospace';
     cx.textAlign = 'center';
     cx.fillText(nd.name, nd.x, nd.y + 30);
+    if (nd.core) {
+      cx.fillStyle = allocated ? '#101318' : '#a48752';
+      cx.font = 'bold 8px monospace';
+      cx.fillText('核心', nd.x, nd.y - 3);
+    }
   }
   cx.restore();
 }
@@ -1459,7 +1605,8 @@ function talentHitTest(sx, sy) {
   const y = (sy - talentView.oy) / talentView.scale;
   for (const id in talents.nodes) {
     const nd = talents.nodes[id];
-    if (Math.hypot(x-nd.x, y-nd.y) < 18/talentView.scale) return id;
+    const rr = (nd.core ? 27 : 18) / talentView.scale;
+    if (Math.hypot(x-nd.x, y-nd.y) < rr) return id;
   }
   return null;
 }
@@ -1525,6 +1672,15 @@ window.addEventListener('touchend', e => {
     if (id) allocateTalent(id);
   }
 });
+talentCanvas.addEventListener('mousemove', e => {
+  if (!talents || !document.querySelector('#panel-talents.open')) { hideTooltip(); return; }
+  if (talentDrag && talentDrag.moved) { hideTooltip(); return; }
+  const pos = talentCanvasPos(e);
+  const id = talentHitTest(pos.sx, pos.sy);
+  if (id) showTooltip(talentTooltipHTML(talents.nodes[id]), e.clientX, e.clientY);
+  else hideTooltip();
+});
+talentCanvas.addEventListener('mouseleave', hideTooltip);
 window.addEventListener('resize', () => {
   if (document.querySelector('#panel-talents.open')) {
     fitTalentView();
@@ -1576,22 +1732,49 @@ function playerDamageRoll(mult) {
   return {dmg, crit};
 }
 
-function damageEnemy(e, dmg, element) {
+function damageEnemy(e, dmg, element, source, crit) {
   let final = dmg;
   if (!element) final *= (1 - armorReduction());
   e.hp -= final;
   e.hitT = 0.15;
   addFloatText(e.x, e.y - e.radius - 4, Math.round(final), element ? '#ffd23f' : '#fff');
-  if (e.hp <= 0) killEnemy(e);
+  if (crit && hasEffect('crit_heal')) {
+    const heal = player.maxLife * 0.05;
+    player.hp = Math.min(player.maxLife, player.hp + heal);
+  }
+  if (e.hp <= 0) killEnemy(e, source);
 }
 
-function killEnemy(e) {
+function damageEnemiesInRadius(x, y, radius, dmg, element, source, crit) {
+  for (const e of [...enemies]) {
+    if (dist(x, y, e.x, e.y) < radius + e.radius) {
+      damageEnemy(e, dmg, element, source, crit);
+    }
+  }
+}
+
+function killEnemy(e, source) {
   const idx = enemies.indexOf(e);
   if (idx >= 0) enemies.splice(idx, 1);
   kills++;
   addParticles(e.x, e.y, e.color, 10);
   gainXp(e.xp);
   dropLoot(e);
+  if (hasEffect('mana_on_kill')) {
+    const mana = player.maxMana * 0.08;
+    player.mp = Math.min(player.maxMana, player.mp + mana);
+  }
+  if (hasEffect('warrior_blood_explosion') &&
+      (source === 'melee' || source === 'aoe' || source === 'melee_basic')) {
+    const roll = playerDamageRoll(0.7);
+    damageEnemiesInRadius(e.x, e.y, 58, roll.dmg, null, 'trigger', roll.crit);
+    addShockwave(e.x, e.y, 58);
+  }
+  if (hasEffect('cleave_explosion') && source === 'melee') {
+    const roll = playerDamageRoll(0.5);
+    damageEnemiesInRadius(e.x, e.y, 48, roll.dmg, null, 'trigger', roll.crit);
+    addShockwave(e.x, e.y, 48);
+  }
   if (e.boss) {
     addFloatText(e.x, e.y-20, '首领已击败', '#ffd23f');
     beep(880, 0.1, 0.2);
@@ -1637,46 +1820,86 @@ function castSkill(sk) {
   if (sup === 'chain') { chainBonus += 1; dmgMult *= 0.9; }
   if (sup === 'area') { radiusMult *= 1.4; }
   if (sup === 'leech') { leech = 0.1; }
+  if (hasEffect('all_leech')) leech = Math.max(leech, 0.05);
+
+  if (sk.skill === 'splitArrow' && hasEffect('ranger_split')) {
+    proj += 2; dmgMult *= 0.85;
+  }
+  if (sk.skill === 'barrage' && hasEffect('barrage_split')) {
+    proj += 2; dmgMult *= 0.85;
+  }
+  if (sk.skill === 'chainLightning') {
+    if (hasEffect('chain_storm')) chainBonus += 2;
+    if (hasEffect('chain_storm_legend')) chainBonus += 2;
+  }
 
   if (d.type === 'melee') {
     let count = 0;
-    for (const e of enemies) {
-      if (dist(player.x,player.y,e.x,e.y) < d.range + e.radius) {
-        const ang = Math.atan2(e.y-player.y, e.x-player.x);
-        let diff = ang - aim;
-        while (diff > Math.PI) diff -= Math.PI*2;
-        while (diff < -Math.PI) diff += Math.PI*2;
-        if (Math.abs(diff) < d.arc) {
-          const roll = playerDamageRoll(d.dmg/100*dmgMult);
-          damageEnemy(e, roll.dmg);
-          if (leech) player.hp = Math.min(player.maxLife, player.hp + roll.dmg*leech);
-          count++;
+    const fan = (sk.skill === 'cleave' && hasEffect('cleave_fan')) ? [-0.52, 0, 0.52] : [0];
+    for (const off of fan) {
+      const a = aim + off;
+      for (const e of [...enemies]) {
+        if (dist(player.x,player.y,e.x,e.y) < d.range + e.radius) {
+          const ang = Math.atan2(e.y-player.y, e.x-player.x);
+          let diff = ang - a;
+          while (diff > Math.PI) diff -= Math.PI*2;
+          while (diff < -Math.PI) diff += Math.PI*2;
+          if (Math.abs(diff) < d.arc) {
+            const roll = playerDamageRoll(d.dmg/100*dmgMult * (fan.length>1 ? 0.72 : 1));
+            if (hasEffect('warrior_fury') && Math.random() < 0.18) roll.dmg *= 2;
+            damageEnemy(e, roll.dmg, null, 'melee', roll.crit);
+            if (leech) player.hp = Math.min(player.maxLife, player.hp + roll.dmg*leech);
+            count++;
+          }
         }
       }
+      addSlash(a);
     }
-    addSlash(aim);
     if (count) beep(180, 0.05, 0.1);
   } else if (d.type === 'aoe') {
     let count = 0;
-    for (const e of enemies) {
+    let firstRoll = null;
+    for (const e of [...enemies]) {
       if (dist(player.x,player.y,e.x,e.y) < d.radius*radiusMult + e.radius) {
         const roll = playerDamageRoll(d.dmg/100*dmgMult);
-        damageEnemy(e, roll.dmg);
+        if (!firstRoll) firstRoll = {dmg:roll.dmg, crit:roll.crit};
+        if (hasEffect('warrior_fury') && Math.random() < 0.18) roll.dmg *= 2;
+        damageEnemy(e, roll.dmg, null, 'aoe', roll.crit);
         if (leech) player.hp = Math.min(player.maxLife, player.hp + roll.dmg*leech);
         count++;
       }
     }
     addShockwave(player.x, player.y, d.radius*radiusMult);
+    if (sk.skill === 'groundSlam' && hasEffect('warrior_aftershock') && firstRoll) {
+      delayedEffects.push({t:0.24, type:'aoe', x:player.x, y:player.y,
+        radius:d.radius*radiusMult*0.72, dmg:firstRoll.dmg*0.55, leech});
+    }
     if (count) beep(140, 0.08, 0.15);
   } else if (d.type === 'proj') {
-    const n = proj;
+    let n = proj;
+    let element = d.element || null;
+    let projKind = d.element === 'fire' ? 'fire' : 'arrow';
+    let projRadius = (d.radius || 0) * radiusMult;
+    let projSpeed = d.speed;
+    if (sk.skill === 'fireball' && hasEffect('fire_split')) {
+      n = 3; dmgMult *= 0.62;
+    }
+    if (sk.skill === 'fireball' && hasEffect('fireball_lightning')) {
+      element = 'lightning';
+      projKind = 'bolt';
+      projRadius = 0;
+      chainBonus += 1;
+    }
     const spread = n > 1 ? 0.5 : 0;
     for (let i=0; i<n; i++) {
       const a = aim + (n===1 ? 0 : -spread/2 + spread*i/(n-1));
-      projectiles.push({x:player.x, y:player.y, vx:Math.cos(a)*d.speed, vy:Math.sin(a)*d.speed,
-        dmg: (player.weapon ? attackDamage(d.dmg/100*dmgMult) : spellDamage(d.dmg*dmgMult)),
-        owner:'player', radius: d.radius*radiusMult || 0, element:d.element,
-        chain: chainBonus, life:1.8, kind: d.element==='fire'?'fire':'arrow'});
+      const spellProj = !!d.element;
+      const dmg = spellProj ? spellDamage(d.dmg*dmgMult) : attackDamage(d.dmg/100*dmgMult);
+      projectiles.push({x:player.x, y:player.y, vx:Math.cos(a)*projSpeed, vy:Math.sin(a)*projSpeed,
+        dmg, owner:'player', radius: projRadius, element,
+        chain: chainBonus, life:1.8, kind: projKind,
+        pierceChance: projKind === 'arrow' && hasEffect('arrow_pierce') ? 0.35 : 0,
+        hit: []});
     }
     beep(420, 0.04, 0.08);
   } else if (d.type === 'chain') {
@@ -1734,8 +1957,11 @@ function basicAttack() {
 
   if (atk.kind === 'proj') {
     const kind = atk.projKind || 'arrow';
+    const isArrow = kind === 'arrow';
     projectiles.push({x:player.x, y:player.y, vx:Math.cos(aim)*atk.speed, vy:Math.sin(aim)*atk.speed,
-      dmg: attackDamage(1), owner:'player', radius:0, life: Math.max(0.5, atk.range/atk.speed), kind:kind});
+      dmg: attackDamage(1), owner:'player', radius:0, life: Math.max(0.5, atk.range/atk.speed), kind:kind,
+      pierceChance: isArrow && hasEffect('arrow_pierce') ? 0.35 : 0,
+      hit: []});
     beep(430, 0.04, 0.08);
   } else {
     let best = null, bd = atk.range;
@@ -1745,7 +1971,8 @@ function basicAttack() {
     }
     if (best) {
       const roll = playerDamageRoll(1);
-      damageEnemy(best, roll.dmg);
+      if (hasEffect('warrior_fury') && Math.random() < 0.18) roll.dmg *= 2;
+      damageEnemy(best, roll.dmg, null, 'melee_basic', roll.crit);
       addSlash(Math.atan2(best.y-player.y, best.x-player.x));
       beep(200, 0.04, 0.08);
     }
@@ -1856,17 +2083,32 @@ function update(dt) {
     if (!dead) {
       if (p.owner === 'player') {
         for (const e of enemies) {
+          if (p.hit && p.hit.includes(e)) continue;
           if (dist(p.x,p.y,e.x,e.y) < (p.radius || 3) + e.radius) {
-            damageEnemy(e, p.dmg, p.element);
+            let hitDmg = p.dmg;
+            let hitCrit = false;
+            if (!p.element) {
+              hitCrit = Math.random() < critChance();
+              if (hitCrit) hitDmg *= 1.6;
+            }
+            damageEnemy(e, hitDmg, p.element, 'proj', hitCrit);
             if (p.radius > 0) {
               addShockwave(p.x,p.y,p.radius);
               for (const e2 of enemies) {
-                if (e2!==e && dist(p.x,p.y,e2.x,e2.y) < p.radius+e2.radius) damageEnemy(e2, p.dmg*0.7, p.element);
+                if (e2!==e && dist(p.x,p.y,e2.x,e2.y) < p.radius+e2.radius) damageEnemy(e2, p.dmg*0.7, p.element, 'proj');
               }
               dead = true;
             } else if (p.chain > 0) {
               chainFrom(p, e); dead = true;
-            } else dead = true;
+            } else {
+              const pierce = p.pierceChance > 0 && Math.random() < p.pierceChance;
+              if (pierce && p.life > 0) {
+                p.hit.push(e);
+                dead = false;
+              } else {
+                dead = true;
+              }
+            }
             break;
           }
         }
@@ -1877,6 +2119,19 @@ function update(dt) {
     if (dead) {
       if (p.kind==='fire' || p.kind==='arrow') addParticles(p.x,p.y,'#ffd23f',3);
       projectiles.splice(i,1);
+    }
+  }
+
+  // 延迟冲击波（余震等）
+  for (let i=delayedEffects.length-1; i>=0; i--) {
+    const de = delayedEffects[i];
+    de.t -= dt;
+    if (de.t <= 0) {
+      if (de.type === 'aoe') {
+        damageEnemiesInRadius(de.x, de.y, de.radius, de.dmg, null, 'aoe');
+        addShockwave(de.x, de.y, de.radius);
+      }
+      delayedEffects.splice(i, 1);
     }
   }
 
@@ -2406,6 +2661,7 @@ function continueGame() {
   groundItems = [];
   particles = [];
   floatTexts = [];
+  delayedEffects = [];
   targetPoint = null;
   paused = false;
   moving = false;
