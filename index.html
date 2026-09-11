@@ -548,8 +548,8 @@ const SKILL_DEFS = {
 
 const BASIC_ATTACK_DEFS = {
   warrior: {name:'普通攻击', icon:'⚔', kind:'melee', range:70},
-  ranger: {name:'普通攻击', icon:'弓', kind:'proj', range:260, speed:330},
-  mage: {name:'普通攻击', icon:'✶', kind:'melee', range:70}
+  ranger: {name:'普通攻击', icon:'弓', kind:'proj', range:260, speed:330, projKind:'arrow'},
+  mage: {name:'普通攻击', icon:'✶', kind:'proj', range:230, speed:300, projKind:'bolt'}
 };
 
 const MAP_DEFS = {
@@ -1700,8 +1700,7 @@ function chainLightning(x, y, jumps, dmg, leech) {
     }
     if (!best) break;
     hit.add(best);
-    particles.push({x:(prev.x+best.x)/2, y:(prev.y+best.y)/2, vx:0, vy:0, life:0.18,
-      color:'#7fd8ff', size:2, type:'spark'});
+    addLightning(prev.x, prev.y, best.x, best.y, '#8fe3ff');
     const roll = {dmg: dmg*(1+Math.random()*0.2), crit:false};
     damageEnemy(best, roll.dmg, 'lightning');
     if (leech) player.hp = Math.min(player.maxLife, player.hp + roll.dmg*leech);
@@ -1709,6 +1708,21 @@ function chainLightning(x, y, jumps, dmg, leech) {
     cx = best.x; cy = best.y;
   }
   beep(520, 0.05, 0.12);
+}
+
+function addLightning(x1, y1, x2, y2, color) {
+  const segs = 5 + Math.floor(Math.random()*3);
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy/len, ny = dx/len;
+  const pts = [{x:x1, y:y1}];
+  for (let i=1; i<segs; i++) {
+    const t = i/segs;
+    const off = (Math.random()-0.5)*14;
+    pts.push({x: x1 + dx*t + nx*off, y: y1 + dy*t + ny*off});
+  }
+  pts.push({x:x2, y:y2});
+  particles.push({type:'bolt', pts, color, life:0.18, x:x1, y:y1, vx:0, vy:0});
 }
 
 function basicAttack() {
@@ -1719,8 +1733,9 @@ function basicAttack() {
   basicCd = Math.max(0.22, 0.55 / weaponSpeed);
 
   if (atk.kind === 'proj') {
+    const kind = atk.projKind || 'arrow';
     projectiles.push({x:player.x, y:player.y, vx:Math.cos(aim)*atk.speed, vy:Math.sin(aim)*atk.speed,
-      dmg: attackDamage(1), owner:'player', radius:0, life: Math.max(0.5, atk.range/atk.speed), kind:'arrow'});
+      dmg: attackDamage(1), owner:'player', radius:0, life: Math.max(0.5, atk.range/atk.speed), kind:kind});
     beep(430, 0.04, 0.08);
   } else {
     let best = null, bd = atk.range;
@@ -2060,6 +2075,17 @@ function draw() {
     } else if (p.type==='ring') {
       ctx.strokeStyle = p.color; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(px,py,p.size*(1-p.life/0.25),0,Math.PI*2); ctx.stroke();
+    } else if (p.type==='bolt') {
+      ctx.globalAlpha = clamp(p.life/0.18,0,1);
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      p.pts.forEach((pt, i) => {
+        const bx = pt.x-camX, by = pt.y-camY;
+        if (i === 0) ctx.moveTo(bx, by); else ctx.lineTo(bx, by);
+      });
+      ctx.stroke();
+      ctx.globalAlpha = 1;
     } else {
       ctx.globalAlpha = clamp(p.life*3,0,1);
       ctx.fillStyle = p.color;
