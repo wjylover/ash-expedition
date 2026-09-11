@@ -186,6 +186,20 @@
   #panel-skills { bottom: 90px; left: 16px; width: 430px; }
   #panel-shop { top: 70px; right: 16px; width: 430px; max-height: calc(100vh - 100px); }
   #panel-map { top: 70px; right: 16px; width: 460px; max-height: calc(100vh - 100px); }
+  #panel-uniques { top: 70px; right: 16px; width: 460px; max-height: calc(100vh - 100px); }
+
+  .unique-grid { display: flex; flex-direction: column; gap: 10px; }
+  .unique-card {
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 10px 12px; font-size: 12px; line-height: 1.5;
+  }
+  .unique-card .tt-name { font-weight: bold; font-size: 14px; }
+  .unique-card .tt-sep { border-top: 1px solid #2a323d; margin: 6px 0; }
+  .unique-card .tt-affix { margin: 2px 0; }
+  .unique-card .tt-affix.prefix { color: #9fc7ff; }
+  .unique-card .tt-affix.suffix { color: #9fe0b5; }
+  .unique-card .tt-affix.implicit { color: #cbb7ff; }
+  .unique-card .tt-affix.legendary { color: #ffb35c; }
 
   .equip-grid {
     display: grid; grid-template-columns: repeat(5, 64px); gap: 6px;
@@ -367,7 +381,7 @@
       justify-content: flex-start;
     }
     #topbuttons .btn, #topbuttons .gold-chip { height: 30px; min-width: 34px; padding: 0 7px; font-size: 11px; }
-    #panel-inventory, #panel-character, #panel-skills, #panel-shop, #panel-map {
+    #panel-inventory, #panel-character, #panel-skills, #panel-shop, #panel-map, #panel-uniques {
       width: calc(100vw - 24px); right: 12px;
       top: 150px; max-height: calc(100vh - 160px);
     }
@@ -402,6 +416,7 @@
       <button class="btn" data-panel="panel-skills" title="技能 (O)">技能</button>
       <button class="btn" data-panel="panel-shop" title="商店 (H)">商店</button>
       <button class="btn" data-panel="panel-map" title="地图 (M)">地图</button>
+      <button class="btn" data-panel="panel-uniques" title="传奇图鉴 (U)">图鉴</button>
       <button class="btn" id="save-btn" title="存档">存档</button>
     </div>
   </div>
@@ -467,6 +482,12 @@
   <div id="panel-map" class="panel">
     <div class="panel-head"><span>远征地图</span><span class="close" data-close="panel-map">×</span></div>
     <div class="panel-body" id="map-body"></div>
+  </div>
+
+  <!-- Unique codex panel -->
+  <div id="panel-uniques" class="panel">
+    <div class="panel-head"><span>传奇图鉴</span><span class="close" data-close="panel-uniques">×</span></div>
+    <div class="panel-body"><div class="unique-grid" id="uniques-body"></div></div>
   </div>
 
   <div id="tooltip"></div>
@@ -1127,6 +1148,27 @@ function itemTooltipHTML(it) {
   html += `<div class="tt-sep"></div>`;
   html += `<div class="tt-affix suffix">售价 ${itemSellPrice(it)} 金币</div>`;
   html += `<div class="tt-note">左键穿戴 / 卸下 · 右键出售</div>`;
+  return html;
+}
+
+function codexUniqueHTML(it) {
+  const c = RARITY_COLORS.unique;
+  let html = `<div class="tt-name" style="color:${c}">${it.name}</div>`;
+  html += `<div style="color:var(--dim)">传奇 · ${SLOT_META[it.slot].label} · 底材 ${it.baseName} · 物品等级 ${it.ilvl}</div>`;
+  html += `<div class="tt-sep"></div>`;
+  const w = it.baseFx;
+  if (w && w.dmg) html += `<div class="tt-affix">武器伤害 ${w.dmg[0]}-${w.dmg[1]}</div>`;
+  if (w && w.speed) html += `<div class="tt-affix">攻击速度 ${w.speed.toFixed(1)}</div>`;
+  if (w && w.spell) html += `<div class="tt-affix implicit">+${Math.round(w.spell*100)}% 法术伤害（底材）</div>`;
+  if (w && w.armor) html += `<div class="tt-affix implicit">+${w.armor} 护甲（底材）</div>`;
+  if (w && w.atkSpeed) html += `<div class="tt-affix implicit">+${Math.round(w.atkSpeed*100)}% 攻击速度（底材）</div>`;
+  for (const a of it.affixes) {
+    html += `<div class="tt-affix ${a.prefix?'prefix':'suffix'}">${a.name}</div>`;
+  }
+  if (Array.isArray(it.effects) && it.effects.length) {
+    html += `<div class="tt-sep"></div>`;
+    for (const ef of it.effects) html += `<div class="tt-affix legendary">${ef.text}</div>`;
+  }
   return html;
 }
 
@@ -2499,6 +2541,7 @@ window.addEventListener('keydown', e => {
   else if (k === 'i') togglePanel('panel-character');
   else if (k === 'h') togglePanel('panel-shop');
   else if (k === 'm') togglePanel('panel-map');
+  else if (k === 'u') togglePanel('panel-uniques');
   else if (k === 'escape') closePanels();
 });
 
@@ -2525,6 +2568,7 @@ function togglePanel(id) {
     if (id==='panel-character') renderCharacter();
     if (id==='panel-shop') renderShop();
     if (id==='panel-map') renderMapPanel();
+    if (id==='panel-uniques') renderUniques();
   }
   updatePaused();
 }
@@ -2555,6 +2599,21 @@ function renderMapPanel() {
       <button class="map-enter" data-map-id="${m.id}" ${locked?'disabled':''}>${current?'再次进入':(locked?'等级不足':'进入')}</button>
     </div>`;
   });
+  body.innerHTML = html;
+}
+
+function renderUniques() {
+  const body = $('uniques-body');
+  let html = '';
+  for (const u of UNIQUES) {
+    const ub = baseForName(u.slot, u.base);
+    const it = {
+      name:u.name, slot:u.slot, rarity:'unique', ilvl:u.ilvl,
+      baseFx: baseFxFromBase(ub), baseName:u.base,
+      affixes:u.affixes || [], effects:u.effects || [], unique:true
+    };
+    html += `<div class="unique-card">${codexUniqueHTML(it)}</div>`;
+  }
   body.innerHTML = html;
 }
 
