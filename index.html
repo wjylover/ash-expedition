@@ -504,7 +504,7 @@
         </div>
       </div>
       <div class="hint">
-        <b>WASD</b> 移动 · <b>鼠标左键</b> 普攻 · <b>鼠标右键 / 数字键</b> 释放技能 · <b>B</b> 背包 · <b>P</b> 天赋 · <b>O</b> 技能 · <b>H</b> 商店 · <b>M</b> 地图<br>
+        <b>WASD</b> 移动 · <b>鼠标左键</b> 普攻 · <b>空格 / 鼠标右键</b> 释放技能 · <b>B</b> 背包 · <b>P</b> 天赋 · <b>O</b> 技能 · <b>H</b> 商店 · <b>M</b> 地图<br>
         走到掉落物上自动拾取 · 背包左键穿戴 / 卸下 · 右键出售装备 · 悬浮查看词条
       </div>
     </div>
@@ -540,16 +540,16 @@ const SKILL_DEFS = {
     desc:'向多个方向射出箭矢'},
   barrage: {name:'疾风连射', icon:'B', type:'proj', dmg:55, proj:5, speed:360, cd:1.2, mana:10,
     desc:'快速射出密集的箭矢'},
-  fireball: {name:'火球术', icon:'F', type:'proj', dmg:135, proj:1, speed:270, radius:70, cd:0.7, mana:9,
+  fireball: {name:'火球术', icon:'🔥', type:'proj', dmg:135, proj:1, speed:270, radius:70, cd:0.7, mana:9,
     element:'fire', desc:'射出会爆炸的火球'},
-  chainLightning: {name:'连锁闪电', icon:'L', type:'chain', dmg:95, chain:3, range:240, cd:1.1, mana:11,
+  chainLightning: {name:'连锁闪电', icon:'⚡', type:'chain', dmg:95, chain:3, range:240, cd:1.1, mana:11,
     element:'lightning', desc:'闪电在敌人之间跳跃'},
 };
 
 const BASIC_ATTACK_DEFS = {
   warrior: {name:'普通攻击', icon:'⚔', kind:'melee', range:70},
   ranger: {name:'普通攻击', icon:'弓', kind:'proj', range:260, speed:330},
-  mage: {name:'普通攻击', icon:'✦', kind:'melee', range:70}
+  mage: {name:'普通攻击', icon:'✶', kind:'melee', range:70}
 };
 
 const MAP_DEFS = {
@@ -1285,9 +1285,10 @@ function renderSkillBar() {
     const sup = sk.support ? SUPPORT_DEFS[sk.support].name : '';
     const el = document.createElement('div');
     el.className = 'skill-slot';
-    el.innerHTML = `<div class="key">${i+1}</div><div class="ico">${d.icon}</div>
+    const keyLabel = i === 0 ? '空格' : (i === 1 ? '右键' : (i+1));
+    el.innerHTML = `<div class="key">${keyLabel}</div><div class="ico">${d.icon}</div>
       <div class="support">${sup}</div>${cd>0?`<div class="cd">${cd.toFixed(1)}</div>`:''}`;
-    el.title = d.name;
+    el.title = d.name + (i === 0 ? ' · 空格' : (i === 1 ? ' · 鼠标右键' : ''));
     el.addEventListener('click', () => { $('panel-skills').classList.add('open'); });
     sb.appendChild(el);
   });
@@ -1301,9 +1302,10 @@ function renderSkillsPanel() {
     for (const k in SUPPORT_DEFS) {
       if (supports[k]) opts += `<option value="${k}" ${sk.support===k?'selected':''}>${SUPPORT_DEFS[k].name}</option>`;
     }
+    const keyLabel = i === 0 ? '空格' : (i === 1 ? '右键' : (i+1));
     html += `<div class="skill-row">
       <div class="badge">${d.icon}</div>
-      <div class="info"><b>${d.name} <span style="color:var(--dim)">[${i+1}]</span></b>
+      <div class="info"><b>${d.name} <span style="color:var(--dim)">[${keyLabel}]</span></b>
       <span>${d.desc} · 伤害 ${d.dmg} · 耗蓝 ${d.mana} · 冷却 ${d.cd}s</span></div>
       <select data-skill="${sk.skill}">${opts}</select>
     </div>`;
@@ -2206,7 +2208,7 @@ window.addEventListener('keydown', e => {
     keys[k] = true;
     e.preventDefault();
   }
-  else if (e.key === ' ') { e.preventDefault(); if (!paused) basicAttack(); }
+  else if (e.key === ' ') { e.preventDefault(); if (!paused) castSkill(skills[0]); }
   else if (k === '1') { if (!paused) castSkill(skills[0]); }
   else if (k === '2') { if (!paused) castSkill(skills[1]); }
   else if (k === 'b') togglePanel('panel-inventory');
