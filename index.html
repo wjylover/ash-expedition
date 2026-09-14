@@ -174,7 +174,7 @@
   .panel-head .close:hover { color: var(--danger); }
   .panel-body { padding: 12px; overflow: auto; }
 
-  #panel-inventory { top: 70px; right: 16px; width: 420px; max-height: calc(100vh - 100px); }
+  #panel-inventory { top: 70px; right: 16px; width: 540px; max-height: calc(100vh - 100px); }
   #panel-character { top: 70px; right: 16px; width: 340px; }
   #panel-talents {
     top: 60px; left: 50%; transform: translateX(-50%);
@@ -220,15 +220,15 @@
   .eq-center { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 
   .inv-grid {
-    display: grid; grid-template-columns: repeat(5, 64px); gap: 6px;
+    display: grid; grid-template-columns: repeat(10, 46px); gap: 5px;
   }
   .inv-cell {
-    width: 64px; height: 64px; background: var(--panel-2);
+    width: 46px; height: 46px; background: var(--panel-2);
     border: 2px solid var(--border); position: relative;
-    cursor: pointer; text-align: center; padding-top: 8px;
+    cursor: pointer; text-align: center; padding-top: 5px;
   }
-  .inv-cell .sym { font-size: 20px; }
-  .inv-cell .nm { font-size: 8px; height: 20px; overflow: hidden; }
+  .inv-cell .sym { font-size: 17px; }
+  .inv-cell .nm { font-size: 7px; height: 17px; line-height: 1.1; overflow: hidden; }
   .inv-cell:hover { border-color: var(--accent-2); }
   .inv-cell.empty { border-style: dashed; }
 
@@ -242,7 +242,7 @@
   .stat-table td:last-child { text-align: right; color: var(--accent); }
   .stat-sec { color: var(--dim); font-size: 11px; letter-spacing: 1px; margin: 14px 0 5px; }
 
-  #talent-canvas { width: 100%; height: auto; aspect-ratio: 920 / 620; display: block; cursor: grab; image-rendering: pixelated; }
+  #talent-canvas { width: 100%; height: auto; aspect-ratio: 1800 / 1500; display: block; cursor: grab; image-rendering: pixelated; }
   #talent-canvas:active { cursor: grabbing; }
   .points-chip {
     display: inline-block; padding: 3px 9px; background: #221c10;
@@ -385,6 +385,10 @@
       width: calc(100vw - 24px); right: 12px;
       top: 150px; max-height: calc(100vh - 160px);
     }
+    .inv-grid { grid-template-columns: repeat(5, 52px); gap: 5px; }
+    .inv-cell { width: 52px; height: 52px; padding-top: 7px; }
+    .inv-cell .sym { font-size: 19px; }
+    .inv-cell .nm { font-size: 7px; height: 18px; }
     #panel-talents { width: calc(100vw - 24px); }
     #talent-canvas { height: auto; }
     .skill-slot { width: 52px; height: 52px; }
@@ -456,7 +460,7 @@
         <span class="close" data-close="panel-talents">×</span>
       </span>
     </div>
-    <div class="panel-body"><canvas id="talent-canvas" width="920" height="620"></canvas></div>
+    <div class="panel-body"><canvas id="talent-canvas" width="1800" height="1500"></canvas></div>
   </div>
 
   <!-- Skills panel -->
@@ -756,6 +760,109 @@ const TREE_BRANCHES = [
   ]},
 ];
 
+const EXTRA_TREE_BRANCHES = [
+  {id:'might', color:'#c98a3d', angle:84, nodes:[
+    {name:'力量 +8', fx:{str:8}},
+    {name:'生命 +30', fx:{life:30}},
+    {name:'物理伤害 +10%', fx:{damage:0.10}},
+    {name:'护甲 +35', fx:{armor:35}},
+    {name:'生命 +45', fx:{life:45}},
+    {name:'物理伤害 +18%', fx:{damage:0.18}},
+    {name:'力量 +12', fx:{str:12}},
+    {name:'生命 +70', fx:{life:70}}
+  ]},
+  {id:'agility', color:'#59b6a3', angle:105, nodes:[
+    {name:'攻击速度 +8%', fx:{atkSpeed:0.08}},
+    {name:'移动速度 +6%', fx:{moveSpeed:0.06}},
+    {name:'暴击率 +5%', fx:{crit:0.05}},
+    {name:'物理伤害 +10%', fx:{damage:0.10}},
+    {name:'攻击速度 +12%', fx:{atkSpeed:0.12}},
+    {name:'移动速度 +9%', fx:{moveSpeed:0.09}},
+    {name:'暴击率 +8%', fx:{crit:0.08}},
+    {name:'物理伤害 +18%', fx:{damage:0.18}}
+  ]},
+  {id:'insight', color:'#7f6fbf', angle:126, nodes:[
+    {name:'智力 +8', fx:{int:8}},
+    {name:'法术伤害 +15%', fx:{spell:0.15}},
+    {name:'法力 +30', fx:{mana:30}},
+    {name:'法术伤害 +25%', fx:{spell:0.25}},
+    {name:'智力 +12', fx:{int:12}},
+    {name:'法力 +50', fx:{mana:50}},
+    {name:'法术伤害 +35%', fx:{spell:0.35}},
+    {name:'法力 +80', fx:{mana:80}}
+  ]},
+  {id:'bulwark', color:'#8a9aa8', angle:147, nodes:[
+    {name:'护甲 +50', fx:{armor:50}},
+    {name:'生命 +60', fx:{life:60}},
+    {name:'生命再生 +2', fx:{regen:2}},
+    {name:'护甲 +90', fx:{armor:90}},
+    {name:'生命 +90', fx:{life:90}},
+    {name:'生命再生 +3', fx:{regen:3}},
+    {name:'护甲 +140', fx:{armor:140}},
+    {name:'生命 +140', fx:{life:140}}
+  ]},
+  {id:'fatal', color:'#d0574f', angle:168, nodes:[
+    {name:'暴击率 +6%', fx:{crit:0.06}},
+    {name:'物理伤害 +12%', fx:{damage:0.12}},
+    {name:'物理伤害 +4', fx:{flatPhys:4}},
+    {name:'暴击率 +10%', fx:{crit:0.10}},
+    {name:'物理伤害 +20%', fx:{damage:0.20}},
+    {name:'物理伤害 +8', fx:{flatPhys:8}},
+    {name:'暴击率 +14%', fx:{crit:0.14}},
+    {name:'物理伤害 +30%', fx:{damage:0.30}}
+  ]},
+  {id:'swift', color:'#4a9bd1', angle:189, nodes:[
+    {name:'攻击速度 +10%', fx:{atkSpeed:0.10}},
+    {name:'移动速度 +8%', fx:{moveSpeed:0.08}},
+    {name:'攻击速度 +14%', fx:{atkSpeed:0.14}},
+    {name:'暴击率 +5%', fx:{crit:0.05}},
+    {name:'移动速度 +12%', fx:{moveSpeed:0.12}},
+    {name:'攻击速度 +18%', fx:{atkSpeed:0.18}},
+    {name:'暴击率 +8%', fx:{crit:0.08}},
+    {name:'移动速度 +16%', fx:{moveSpeed:0.16}}
+  ]},
+  {id:'arcane', color:'#b45fc2', angle:210, nodes:[
+    {name:'法术伤害 +20%', fx:{spell:0.20}},
+    {name:'法力 +35', fx:{mana:35}},
+    {name:'火焰伤害 +5', fx:{fireDmg:5}},
+    {name:'闪电伤害 +5', fx:{lightDmg:5}},
+    {name:'法术伤害 +30%', fx:{spell:0.30}},
+    {name:'法力 +55', fx:{mana:55}},
+    {name:'火焰伤害 +10', fx:{fireDmg:10}},
+    {name:'闪电伤害 +10', fx:{lightDmg:10}}
+  ]},
+  {id:'elements', color:'#4f9d62', angle:231, nodes:[
+    {name:'火焰抗性 +10%', fx:{fire:0.10}},
+    {name:'冰霜抗性 +10%', fx:{cold:0.10}},
+    {name:'闪电抗性 +10%', fx:{light:0.10}},
+    {name:'火焰伤害 +4', fx:{fireDmg:4}},
+    {name:'闪电伤害 +4', fx:{lightDmg:4}},
+    {name:'法术伤害 +10%', fx:{spell:0.10}},
+    {name:'全元素抗性 +12%', fx:{fire:0.12,cold:0.12,light:0.12}},
+    {name:'法术伤害 +18%', fx:{spell:0.18}}
+  ]},
+  {id:'recovery', color:'#d9a63a', angle:252, nodes:[
+    {name:'生命再生 +2', fx:{regen:2}},
+    {name:'生命偷取 +2%', fx:{leech:0.02}},
+    {name:'法力 +25', fx:{mana:25}},
+    {name:'生命 +50', fx:{life:50}},
+    {name:'生命再生 +3', fx:{regen:3}},
+    {name:'生命偷取 +3%', fx:{leech:0.03}},
+    {name:'法力 +40', fx:{mana:40}},
+    {name:'生命 +80', fx:{life:80}}
+  ]},
+  {id:'balanced', color:'#d8a33a', angle:273, nodes:[
+    {name:'生命 +35', fx:{life:35}},
+    {name:'法力 +20', fx:{mana:20}},
+    {name:'护甲 +25', fx:{armor:25}},
+    {name:'物理伤害 +10%', fx:{damage:0.10}},
+    {name:'法术伤害 +10%', fx:{spell:0.10}},
+    {name:'攻击速度 +6%', fx:{atkSpeed:0.06}},
+    {name:'暴击率 +5%', fx:{crit:0.05}},
+    {name:'移动速度 +6%', fx:{moveSpeed:0.06}}
+  ]}
+];
+
 const CORE_TALENTS = {
   warrior: [
     {id:'w_blood_explosion', name:'血爆', color:'#ff6b4a', connect:'phys_3', r:545, angle:-45,
@@ -824,7 +931,7 @@ let talentView = {scale:1, ox:0, oy:0};
 let talentDrag = null;
 
 const WORLD_W = 120, WORLD_H = 80, TILE = 16;
-const INV_CAP = 40;
+const INV_CAP = 100;
 const view = $('view');
 const ctx = view.getContext('2d');
 ctx.imageSmoothingEnabled = false;
@@ -1497,6 +1604,19 @@ function buildTalents(classId) {
     let prev = 'origin';
     b.nodes.forEach((nd, ni) => {
       const r = 150 + ni*108;
+      const id = b.id+'_'+ni;
+      nodes[id] = {id, x:110 + Math.cos(rad)*r, y:310 + Math.sin(rad)*r,
+        name:nd.name, fx:nd.fx, color:b.color};
+      edges.push([prev, id]);
+      prev = id;
+    });
+  });
+  // 进阶天赋：围绕原始天赋树外圈新增更多可构建方向
+  EXTRA_TREE_BRANCHES.forEach((b) => {
+    const rad = (b.angle || 0) * Math.PI / 180;
+    let prev = 'origin';
+    b.nodes.forEach((nd, ni) => {
+      const r = (b.radius || 150) + ni*(b.step || 42);
       const id = b.id+'_'+ni;
       nodes[id] = {id, x:110 + Math.cos(rad)*r, y:310 + Math.sin(rad)*r,
         name:nd.name, fx:nd.fx, color:b.color};
