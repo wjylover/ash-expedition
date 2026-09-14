@@ -719,6 +719,43 @@ const UNIQUES = [
       {id:'mana_on_kill', text:'击杀敌人时回复 8% 最大法力'},
       {id:'all_leech', text:'所有伤害额外吸取 5% 生命'}
     ]},
+  {name:'余烬战靴', base:'铁靴', slot:'boots', ilvl:12,
+    affixes:[{stat:'life', value:40, name:'+40 生命'},
+             {stat:'moveSpeed', value:0.22, name:'+22% 移动速度'},
+             {stat:'armor', value:25, name:'+25 护甲'}],
+    effects:[
+      {id:'trail_regeneration', text:'移动时每秒回复 4% 最大生命'}
+    ]},
+  {name:'回响塔盾', base:'塔盾', slot:'offhand', ilvl:15,
+    affixes:[{stat:'armor', value:65, name:'+65 护甲'},
+             {stat:'life', value:55, name:'+55 生命'},
+             {stat:'fire', value:0.18, name:'+18% 火焰抗性'}],
+    effects:[
+      {id:'mana_aegis', text:'受到伤害时，法力会先承担其中 35%'}
+    ]},
+  {name:'星陨戒指', base:'戒指', slot:'ring1', ilvl:17,
+    affixes:[{stat:'spell', value:0.40, name:'+40% 法术伤害'},
+             {stat:'mana', value:30, name:'+30 法力'},
+             {stat:'light', value:0.20, name:'+20% 闪电抗性'}],
+    effects:[
+      {id:'spell_nova', text:'施放技能时有 22% 概率触发小型元素爆发'}
+    ]},
+  {name:'千咒冠冕', base:'铁盔', slot:'helmet', ilvl:20,
+    affixes:[{stat:'spell', value:0.65, name:'+65% 法术伤害'},
+             {stat:'mana', value:60, name:'+60 法力'},
+             {stat:'int', value:15, name:'+15 智力'}],
+    effects:[
+      {id:'arcane_celerity', text:'技能冷却时间降低 35%'},
+      {id:'chain_storm_legend', text:'连锁闪电额外跳跃 2 次'}
+    ]},
+  {name:'霜息腰带', base:'铁腰带', slot:'belt', ilvl:22,
+    affixes:[{stat:'life', value:60, name:'+60 生命'},
+             {stat:'cold', value:0.25, name:'+25% 冰霜抗性'},
+             {stat:'mana', value:25, name:'+25 法力'}],
+    effects:[
+      {id:'chill_touch', text:'你的伤害有 18% 概率使敌人减速 45%，持续 2 秒'},
+      {id:'glacial_burst', text:'击杀时有 20% 概率释放冰霜新星'}
+    ]},
 ];
 
 const RARITY_COLORS = {normal:'#b9c0c9', magic:'#4aa3ff', rare:'#ffd23f', unique:'#e08a3c'};
@@ -1900,6 +1937,10 @@ function damageEnemy(e, dmg, element, source, crit) {
   if (!element) final *= (1 - armorReduction());
   e.hp -= final;
   e.hitT = 0.15;
+  if (hasEffect('chill_touch') && Math.random() < 0.18) {
+    e.slowT = 2;
+    e.slowPower = 0.45;
+  }
   addFloatText(e.x, e.y - e.radius - 4, Math.round(final), element ? '#ffd23f' : '#fff');
   if (crit && hasEffect('crit_heal')) {
     const heal = player.maxLife * 0.05;
@@ -1937,6 +1978,12 @@ function killEnemy(e, source) {
     const roll = playerDamageRoll(0.5);
     damageEnemiesInRadius(e.x, e.y, 48, roll.dmg, null, 'trigger', roll.crit);
     addShockwave(e.x, e.y, 48);
+  }
+  if (hasEffect('glacial_burst') && Math.random() < 0.20) {
+    const roll = {dmg: spellDamage(55), crit: false};
+    damageEnemiesInRadius(e.x, e.y, 72, roll.dmg, 'cold', 'trigger', false);
+    addParticles(e.x, e.y, '#9fdfff', 8);
+    addShockwave(e.x, e.y, 72);
   }
   if (e.boss) {
     addFloatText(e.x, e.y-20, '首领已击败', '#ffd23f');
@@ -1978,6 +2025,12 @@ function castSkill(sk) {
   cooldowns[sk.skill] = d.cd;
 
   const aim = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+  if (hasEffect('spell_nova') && Math.random() < 0.22) {
+    const novaDmg = {dmg: spellDamage(65), crit: false};
+    damageEnemiesInRadius(player.x, player.y, 78, novaDmg.dmg, 'fire', 'trigger', false);
+    addParticles(player.x, player.y, '#ff9d3c', 10);
+    addShockwave(player.x, player.y, 78);
+  }
   let proj = d.proj || 0, dmgMult = 1, radiusMult = 1, chainBonus = 0, leech = 0;
   if (sup === 'lmp') { proj += 2; dmgMult *= 0.8; }
   if (sup === 'chain') { chainBonus += 1; dmgMult *= 0.9; }
@@ -2197,10 +2250,14 @@ function update(dt) {
   if (player.stats.regen > 0 && player.hp < player.maxLife) {
     player.hp = Math.min(player.maxLife, player.hp + player.stats.regen*dt);
   }
+  if (moving && hasEffect('trail_regeneration') && player.hp < player.maxLife) {
+    player.hp = Math.min(player.maxLife, player.hp + player.maxLife*0.04*dt);
+  }
 
   // 冷却
+  const cdScale = hasEffect('arcane_celerity') ? (1 / 0.65) : 1;
   for (const k in cooldowns) {
-    cooldowns[k] = Math.max(0, cooldowns[k]-dt);
+    cooldowns[k] = Math.max(0, cooldowns[k]-dt*cdScale);
   }
   basicCd = Math.max(0, basicCd - dt);
   if (mouse.down && !paused && basicCd <= 0) {
@@ -2210,19 +2267,21 @@ function update(dt) {
   // 敌人
   for (const e of enemies) {
     e.hitT = Math.max(0, e.hitT-dt);
+    e.slowT = Math.max(0, (e.slowT||0)-dt);
+    const moveStep = e.speed*(e.slowT > 0 ? (1-(e.slowPower||0)) : 1)*dt;
     const dd = dist(player.x,player.y,e.x,e.y);
     if (dd < e.aggro) {
       const a = Math.atan2(player.y-e.y, player.x-e.x);
       if (e.ranged) {
-        if (dd > 100) { e.x += Math.cos(a)*e.speed*dt; e.y += Math.sin(a)*e.speed*dt; }
-        else if (dd < 55) { e.x -= Math.cos(a)*e.speed*dt; e.y -= Math.sin(a)*e.speed*dt; }
+        if (dd > 100) { e.x += Math.cos(a)*moveStep; e.y += Math.sin(a)*moveStep; }
+        else if (dd < 55) { e.x -= Math.cos(a)*moveStep; e.y -= Math.sin(a)*moveStep; }
         if (e.atkCd <= 0 && dd < 200) {
           projectiles.push({x:e.x, y:e.y, vx:Math.cos(a)*150, vy:Math.sin(a)*150,
             dmg:e.dmg, owner:'enemy', radius:0, life:2, kind:'arrow'});
           e.atkCd = 2.0;
         }
       } else {
-        if (dd > e.radius + 8) { e.x += Math.cos(a)*e.speed*dt; e.y += Math.sin(a)*e.speed*dt; }
+        if (dd > e.radius + 8) { e.x += Math.cos(a)*moveStep; e.y += Math.sin(a)*moveStep; }
         if (e.atkCd <= 0 && dd < e.radius + 16) {
           damagePlayer(e.dmg);
           e.atkCd = e.elite ? 1.5 : 1.25;
@@ -2230,8 +2289,8 @@ function update(dt) {
       }
       e.dir = a;
     } else {
-      e.x += Math.cos(e.dir)*e.speed*dt*0.3;
-      e.y += Math.sin(e.dir)*e.speed*dt*0.3;
+      e.x += Math.cos(e.dir)*moveStep*0.3;
+      e.y += Math.sin(e.dir)*moveStep*0.3;
     }
     e.atkCd = Math.max(0, e.atkCd-dt);
     e.x = clamp(e.x, 10, WORLD_W*TILE-10);
@@ -2351,7 +2410,12 @@ function chainFrom(p, first) {
 
 function damagePlayer(dmg) {
   const red = armorReduction();
-  const final = dmg*(1-red);
+  let final = dmg*(1-red);
+  if (hasEffect('mana_aegis')) {
+    const absorbed = Math.min(player.mp, final*0.35);
+    player.mp -= absorbed;
+    final -= absorbed;
+  }
   player.hp -= final;
   addFloatText(player.x, player.y-14, Math.round(final), '#ff6b62');
   beep(110, 0.05, 0.08);
